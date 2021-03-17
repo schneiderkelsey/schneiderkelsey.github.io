@@ -1,21 +1,39 @@
 .title {
-    color: red; 
+    color: rgb(32, 133, 62); 
 }
-/* Set the background color of body to tan */
+/* Set the background color of body to blueviolet */
 body {
-    background-color: tan;
+    background-color: rgba(184, 116, 240, 0.884);
   }
-  
+  h1 {
+    font-size: 72px;
+    color: white;
+  }
+  header {
+background-color: rgb(0, 162, 255);
+color: ghostwhite; 
+padding: 10px 15px;
+border-bottom-color: #cf7919; 
+margin: -8px -8px 20px; 
+  }
+  .main-header {
+background-color: rgb(0, 255, 191);
+width: 960px; 
+
+  }
+p {
+  font-size: 20px;
+}
   /* On screens that are 992px or less, set the background color to blue */
   @media screen and (max-width: 992px) {
     body {
-      background-color: blue;
+      background-color: rgb(70, 152, 228);
     }
   }
   
-  /* On screens that are 600px or less, set the background color to olive */
+  /* On screens that are 600px or less, set the background color to blueviolet */
   @media screen and (max-width: 600px) {
     body {
-      background-color: olive;
+      background-color: rgb(161, 94, 224);
     }
   }
