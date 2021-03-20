@@ -1,7 +1,7 @@
 .title {
     color: rgb(32, 133, 62); 
 }
-/* Set the background color of body to blueviolet */
+
 body {
     background-color: rgba(184, 116, 240, 0.884);
     height: 300vh;
@@ -25,7 +25,7 @@ width: 960px;
 
 
 nav {
-  background-color: darkcyan;
+  background-color: rgb(236, 71, 71);
   border-bottom: 2px solid coral;
   position: fixed;
   top: 0;
