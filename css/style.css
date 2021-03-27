@@ -112,6 +112,8 @@ h2 {
   margin: 0; 
   color:rgb(176, 179, 15)
 }
+
+
   /* On screens that are 992px or less, set the background color to blue */
   @media screen and (max-width: 992px) {
     body {
@@ -125,6 +127,8 @@ h2 {
       background-color: rgb(161, 94, 224);
     }
   }
+
+  
 
  
   
