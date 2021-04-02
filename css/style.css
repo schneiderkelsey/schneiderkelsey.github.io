@@ -20,7 +20,7 @@ body {
 h1 {
   font-size: 20px;
   margin: 0;
-  color: rgb(189, 165, 33);
+  color: rgb(182, 85, 5);
 }
 
 h2 {
@@ -139,10 +139,9 @@ h2 {
 }
 
 .card article {
-  padding: 20px;
+  padding: 50px;
   display: flex;
   flex: 1;
-  justify-content: space-between;
   flex-direction: column;
 
   
@@ -175,7 +174,7 @@ h2 {
 .footer {
   padding: 20px;
   text-align: center;
-  background: rgb(64, 82, 60);
+  background: rgb(93, 121, 86);
 }
 
 
