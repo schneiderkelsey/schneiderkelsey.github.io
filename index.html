@@ -123,54 +123,61 @@
 
   
 
-  <button onclick="myFunction()">List of Wildflowers</button>
+
+
+
+  
+  
 
   <p>Click "List of Wildflowers" to hide the list</p>
- 
-
-
-
+  
+  <button onclick="myFunction()">List of Wildflowers</button>
 
   <div id="myDIV">
+Wild Ginger,  Wild Quinine, Yellow or Gray-Headed Coneflower,  Swamp Milkweed, Tall Tickseed,  Whorled Rosinweed, Sneezeweed,  Solomon's Seal,  Southern Blazing Star, Royal Catchfly,  Silky Aster, Slender Mountain Mint,  Purple Prairie Clover, Rattlebox,  Rattlesnake Master, Pale Purple Coneflower, Phlox,  Prairie Dock, Narrow-leaved Sunflower,  New England Aster,  Ohio Spiderwort, Joe-Pye Weed,  Leaf Cup, Mist Flower, Illinois Bundleflower,  Ironweed,  Jacob's Ladder,  Foxglove Beardtongue,   Giant Sunflower,  Goldenrod - Kentucky's State Flower, Cut-leaf Prairie Dock, Dense Blazing Star, Downy Wood Mint, Compass Plant, Culver's Root, Cup Plant, Celandine Poppy, Columbine, Common Milkweed, Boneset, Butterfly Milkweed, Cardinal Flower, Blue Flag Iris, Blue Lobella, Blue Vervain, Bee Balm, Black-eyed Susan, Blue False Indigo, Swamp Rose, Wild Hydrangea, Winterberry, Nannyberry, Pawpaw, River Birch, Coralberry, Elderberry, Fragrant Sumac
+</div> 
 
-  <!-- Footer -->
-<div class="footer">
-  <h2>List of Wildflowers</h2>
+
+
+
 
   <p id="demo"></p>
-    
+      
+
+
+
+
   <script>
-  var wildflowers = new Array("Wild Ginger", "Wild Quinine", "Yellow or Gray-Headed Coneflower", "Swamp Milkweed", "Tall Tickseed", "Whorled Rosinweed", "Sneezeweed", "Solomon's Seal", "Southern Blazing Star", "Royal Catchfly", "Silky Aster", "Slender Mountain Mint", "Purple Prairie Clover", "Rattlebox", "Rattlesnake Master", "Pale Purple Coneflower", "Phlox", "Prairie Dock", "Narrow-leaved Sunflower", "New England Aster", "Ohio Spiderwort", "Joe-Pye Weed", "Leaf Cup", "Mist Flower", "Illinois Bundleflower", "Ironweed", "Jacob's Ladder", "Foxglove Beardtongue", "Giant Sunflower", "Goldenrod - Kentucky's State Flower", "Cut-leaf Prairie Dock", "Dense Blazing Star", "Downy Wood Mint", "Compass Plant", "Culver's Root", "Cup Plant", "Celandine Poppy", "Columbine", "Common Milkweed", "Boneset", "Butterfly Milkweed", "Cardinal Flower", "Blue Flag Iris", "Blue Lobella", "Blue Vervain", "Bee Balm", "Black-eyed Susan", "Blue False Indigo", "Swamp Rose", "Wild Hydrangea", "Winterberry", "Nannyberry", "Pawpaw", "River Birch", "Coralberry", "Elderberry", "Fragrant Sumac");
-  document.getElementById("demo").innerHTML = wildflowers;
-  </script>
+    function myFunction() {
+      var x = document.getElementById("myDIV");
+      if (x.style.display === "none") {
+        x.style.display = "block";
+      } else {
+        x.style.display = "none";
+      }
+    }
+    </script>
+    
+    <script>
+      alert("Welcome to my Wildflower Garden!");
+      </script>
+    
+  <br>
+
+<!-- Footer -->
+<div class="footer">
+  <h2>Tom Petty, "You belong amoung the wildflowers".</h2>
 </div>
-</div>
+
 
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-
-<script src = 'js/app.js'>
-</script> 
-  
-  <script>
-  function myFunction() {
-    var x = document.getElementById("myDIV");
-    if (x.style.display === "none") {
-      x.style.display = "block";
-    } else {
-      x.style.display = "none";
-    }
-  }
-  </script>
-  
-<br>
-
-
-
+<meta name="viewport" content="width=device-width, initial-scale=1">    
     
     
     
-    
+
+<script src="js/hideshow.js"></script>
+
 
 
 

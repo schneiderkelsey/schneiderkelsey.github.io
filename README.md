@@ -4,7 +4,6 @@ CSS Features List
 Use Flexbox or CSS Grid to organize content areas based on mobile or desktop views. - I used a combination Flex and Grid. 
 A navigation menu that expands and collapses properly at desktop and mobile sizes, such as by switching between vertical and horizontal styles, or is opened and closed by clicking the “hamburger” icon. 
 JavaScript Features List 
-Create and populate a JavaScript array with one or more values and display the contents of some or all of the array on your page. I used my list of Wildflowers so I can see them in one easy place while plant shopping. 
 Show/hide one or more content areas or elements on your site through clicking a button or some other user interaction - must be done with some JavaScript code. - Sometimes I don't care for looking at a list so I created a show/hide button for the wildflower plants. 
 
 
