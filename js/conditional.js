@@ -1,7 +1,7 @@
 let parkIsOpen = true; 
 
 if (parkIsOpen) {
-    console.log("welcome to the Badlands National Park! Try to enjoy your stay."); 
+    console.log("Far away from your trouble and worry"); 
 } else {
-    console.log("Sorry, the Badlands are particularly bad today. we're closed!"); 
+    console.log("You belong somewhere you feel free"); 
 }
