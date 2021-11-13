@@ -6,4 +6,8 @@ A navigation menu that expands and collapses properly at desktop and mobile size
 JavaScript Features List 
 Show/hide one or more content areas or elements on your site through clicking a button or some other user interaction - must be done with some JavaScript code. - Sometimes I don't care for looking at a list so I created a show/hide button for the wildflower plants. 
 
+Created a function that returned a message on the webpage "name" . 
+Created a condition that showed up in the console. 
+Created a while and for loop that showed up in the console. 
+
 

@@ -1,10 +1,10 @@
-let numSeeds = 4; 
-let monthNumber = 1;
-let monthsToPrint = 12; 
+let numSeeds = 2; 
+let dayNumber = 1;
+let daysToPrint = 12; 
 
-while (monthNumber <= 
-    monthsToPrint) {
+while (dayNumber <= 
+    daysToPrint) {
         numSeeds *= 4;
         console.log("Plant "
-        + numSeeds + " seeds in " + monthNumber + " month(s)!"); monthNumber++; 
+        + numSeeds + " seeds in " + dayNumber + " day(s)!"); dayNumber++; 
     }

@@ -19,7 +19,7 @@ function setUserName() {
     setUserName();
   } else {
     let storedName = localStorage.getItem('name');
-    myHeading.textContent = 'You belong among the wildflowers, ' + storedName;
+    myHeading.textContent = 'You belong somewhere you feel free, ' + storedName;
   }
 
   myButton.onclick = function() {
@@ -32,7 +32,7 @@ function setUserName() {
       setUserName();
     } else {
       localStorage.setItem('name', myName);
-      myHeading.textContent = 'You belong among the wildflowers, ' + myName;
+      myHeading.textContent = 'You belong somewhere you feel free, ' + myName;
     }
   }
   
