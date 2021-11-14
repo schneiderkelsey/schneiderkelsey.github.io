@@ -174,7 +174,35 @@ h2 {
   margin: 2em 0 0 0;
 }
 
+#theDIV {
+  
+  /* Set the width of element to 100% */
+  width: 100%;
+  
+  /* Set the top and bottom padding to 50px, right and left padding to 0px*/
+  padding: 50px 0;
+  
+  /* Set the text alignment to the center */
+  text-align: center;
+  
+  /* Set the background colour to light green */
+  background-color: lightgreen;
+  
+  /* Set the top margin to 20px */
+  margin-top: 20px;
+  
+  /* Set the bottom margin to 10px */
+  margin-bottom: 10px;
+}
 
+.button {
+  
+  /* Display the element as a block element */
+  display: block;
+  
+  /* Center the element */
+  margin: 0 auto;
+}
 
 
 /* Footer */
