@@ -57,8 +57,6 @@ h2 {
   color: black;
 }
 
-  
-
 /* Column container */
 .row {  
   display: flex;
@@ -185,8 +183,8 @@ h2 {
   /* Set the text alignment to the center */
   text-align: center;
   
-  /* Set the background colour to light green */
-  background-color: lightgreen;
+  /* Set the background colour to light yellow */
+  background-color: rgba(255, 242, 129, 0.884);
   
   /* Set the top margin to 20px */
   margin-top: 20px;

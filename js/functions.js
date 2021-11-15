@@ -22,9 +22,7 @@ function setUserName() {
     myHeading.textContent = 'You belong somewhere you feel free, ' + storedName;
   }
 
-  myButton.onclick = function() {
-    setUserName();
-  }
+
 
   function setUserName() {
     let myName = prompt('Please enter your name.');

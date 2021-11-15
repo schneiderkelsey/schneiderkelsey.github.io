@@ -1,7 +1,7 @@
 {
     "name": "js-conwaysgameoflife",
     "version": "1.0.0",
-    "description": "Build a Conway's Game of Life Simulator with Javascript - https://pluralsight.com",
+    "description": "Build a Conway's Game of Life Simulator with Javascript",
     "scripts": {
       "test": "cross-env NODE_ENV=test mocha './test/*.test.js' || true",
       "test:module1": "cross-env NODE_ENV=test mocha './test/module1.test.js' || true"
