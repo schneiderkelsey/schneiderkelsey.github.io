@@ -1,0 +1,22 @@
+{
+    "name": "js-conwaysgameoflife",
+    "version": "1.0.0",
+    "description": "Build a Conway's Game of Life Simulator with Javascript",
+    "scripts": {
+      "test": "cross-env NODE_ENV=test mocha './test/*.test.js' || true",
+      "test:module1": "cross-env NODE_ENV=test mocha './test/module1.test.js' || true"
+    },
+    "author": "Liam McLennan",
+    "license": "MIT",
+    "dependencies": {
+      "chai": "^4.2.0",
+      "cheerio": "^1.0.0-rc.3",
+      "cross-env": "^5.2.0",
+      "dot-object": "^1.9.0",
+      "esprima": "^4.0.1",
+      "jscodeshift": "^0.6.4",
+      "mocha": "^6.2.0"
+    }
+  }
+
+  Wild Ginger,  Wild Quinine, Yellow or Gray-Headed Coneflower,  Swamp Milkweed, Tall Tickseed,  Whorled Rosinweed, Sneezeweed,  Solomon's Seal,  Southern Blazing Star, Royal Catchfly,  Silky Aster, Slender Mountain Mint,  Purple Prairie Clover, Rattlebox,  Rattlesnake Master, Pale Purple Coneflower, Phlox,  Prairie Dock, Narrow-leaved Sunflower,  New England Aster,  Ohio Spiderwort, Joe-Pye Weed,  Leaf Cup, Mist Flower, Illinois Bundleflower,  Ironweed,  Jacob's Ladder,  Foxglove Beardtongue,   Giant Sunflower,  Goldenrod - Kentucky's State Flower, Cut-leaf Prairie Dock, Dense Blazing Star, Downy Wood Mint, Compass Plant, Culver's Root, Cup Plant, Celandine Poppy, Columbine, Common Milkweed, Boneset, Butterfly Milkweed, Cardinal Flower, Blue Flag Iris, Blue Lobella, Blue Vervain, Bee Balm, Black-eyed Susan, Blue False Indigo, Swamp Rose, Wild Hydrangea, Winterberry, Nannyberry, Pawpaw, River Birch, Coralberry, Elderberry, Fragrant Sumac

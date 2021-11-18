@@ -123,67 +123,67 @@
 
   
 
-
-
-
-  
-  
-
-  <p>Click "List of Wildflowers" to hide the list.</p>
+    <p>Click "List of Wildflowers" to hide the list.</p>
   
 
  
-<!-- A button element with class "button" that will execute "hideOrShow()" function upon clicking -->
-<button class="button" onclick="hideOrShow()">
-  List of Wildflowers
-</button>
+    <!-- A button element with class "button" that will execute "hideOrShow()" function upon clicking -->
+    <button class="button" onclick="hideOrShow()">
+      List of Wildflowers
+    </button>
+    
+    <!-- A div element with id "theDIV" -->
+    <div id="theDIV">
+      Wild Ginger,  Wild Quinine, Yellow or Gray-Headed Coneflower,  Swamp Milkweed, Tall Tickseed,  Whorled Rosinweed, Sneezeweed,  Solomon's Seal,  Southern Blazing Star, Royal Catchfly,  Silky Aster, Slender Mountain Mint,  Purple Prairie Clover, Rattlebox,  Rattlesnake Master, Pale Purple Coneflower, Phlox,  Prairie Dock, Narrow-leaved Sunflower,  New England Aster,  Ohio Spiderwort, Joe-Pye Weed,  Leaf Cup, Mist Flower, Illinois Bundleflower,  Ironweed,  Jacob's Ladder,  Foxglove Beardtongue,   Giant Sunflower,  Goldenrod - Kentucky's State Flower, Cut-leaf Prairie Dock, Dense Blazing Star, Downy Wood Mint, Compass Plant, Culver's Root, Cup Plant, Celandine Poppy, Columbine, Common Milkweed, Boneset, Butterfly Milkweed, Cardinal Flower, Blue Flag Iris, Blue Lobella, Blue Vervain, Bee Balm, Black-eyed Susan, Blue False Indigo, Swamp Rose, Wild Hydrangea, Winterberry, Nannyberry, Pawpaw, River Birch, Coralberry, Elderberry, Fragrant Sumac
+    </div>
+    
+    
+    <p>Countdown to the first day of Spring:</p>
+    <!-- Display the countdown timer in an element -->
+    <p id="demo"></p>
+    
+    <script>
+      // Set the date we're counting down to
+      var countDownDate = new Date("March 20, 2022 15:37:25").getTime();
+      
+      // Update the count down every 1 second
+      var x = setInterval(function() {
+      
+        // Get today's date and time
+        var now = new Date().getTime();
+      
+        // Find the distance between now and the count down date
+        var distance = countDownDate - now;
+      
+        // Time calculations for days, hours, minutes and seconds
+        var days = Math.floor(distance / (1000 * 60 * 60 * 24));
+        var hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+        var seconds = Math.floor((distance % (1000 * 60)) / 1000);
+      
+        // Display the result in the element with id="demo"
+        document.getElementById("demo").innerHTML = days + "d " + hours + "h "
+        + minutes + "m " + seconds + "s ";
+      
+        // If the count down is finished, write some text
+        if (distance < 0) {
+          clearInterval(x);
+          document.getElementById("demo").innerHTML = "EXPIRED";
+        }
+      }, 1000);
+      </script>
+    
+    <button id="button_A">Click me</button>
+    <h1 id="heading_A"></h1>
+    
+    
+      <p id="demo"></p>
 
-<!-- A div element with id "theDIV" -->
-<div id="theDIV">
-  Wild Ginger,  Wild Quinine, Yellow or Gray-Headed Coneflower,  Swamp Milkweed, Tall Tickseed,  Whorled Rosinweed, Sneezeweed,  Solomon's Seal,  Southern Blazing Star, Royal Catchfly,  Silky Aster, Slender Mountain Mint,  Purple Prairie Clover, Rattlebox,  Rattlesnake Master, Pale Purple Coneflower, Phlox,  Prairie Dock, Narrow-leaved Sunflower,  New England Aster,  Ohio Spiderwort, Joe-Pye Weed,  Leaf Cup, Mist Flower, Illinois Bundleflower,  Ironweed,  Jacob's Ladder,  Foxglove Beardtongue,   Giant Sunflower,  Goldenrod - Kentucky's State Flower, Cut-leaf Prairie Dock, Dense Blazing Star, Downy Wood Mint, Compass Plant, Culver's Root, Cup Plant, Celandine Poppy, Columbine, Common Milkweed, Boneset, Butterfly Milkweed, Cardinal Flower, Blue Flag Iris, Blue Lobella, Blue Vervain, Bee Balm, Black-eyed Susan, Blue False Indigo, Swamp Rose, Wild Hydrangea, Winterberry, Nannyberry, Pawpaw, River Birch, Coralberry, Elderberry, Fragrant Sumac
-</div>
+
+  
+  
 
 
-<p>Countdown to the first day of Spring:</p>
-<!-- Display the countdown timer in an element -->
-<p id="demo"></p>
-
-<script>
-// Set the date we're counting down to
-var countDownDate = new Date("March 20, 2022 15:37:25").getTime();
-
-// Update the count down every 1 second
-var x = setInterval(function() {
-
-  // Get today's date and time
-  var now = new Date().getTime();
-
-  // Find the distance between now and the count down date
-  var distance = countDownDate - now;
-
-  // Time calculations for days, hours, minutes and seconds
-  var days = Math.floor(distance / (1000 * 60 * 60 * 24));
-  var hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-  var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-  var seconds = Math.floor((distance % (1000 * 60)) / 1000);
-
-  // Display the result in the element with id="demo"
-  document.getElementById("demo").innerHTML = days + "d " + hours + "h "
-  + minutes + "m " + seconds + "s ";
-
-  // If the count down is finished, write some text
-  if (distance < 0) {
-    clearInterval(x);
-    document.getElementById("demo").innerHTML = "EXPIRED";
-  }
-}, 1000);
-</script>
-
-<button id="button_A">Click me</button>
-<h1 id="heading_A"></h1>
-
-
-  <p id="demo"></p>
 
 
   <br>
@@ -208,6 +208,13 @@ var x = setInterval(function() {
 <script src="js/conditional.js"></script>
 <script src="js/closures.js"></script>
 <script src="js/functions.js"></script>
+<script src="js/index.js"></script>
+<script src="js/tasks.md"></script>
+<script src="js/scrollDetect.js"></script>
+<script src="js/package-lock.json"></script>
+<script src="js/index.js"></script>
+<script src="js/flowers.json"></script>
+<script src="js/app.js"></script>
 
 
 
