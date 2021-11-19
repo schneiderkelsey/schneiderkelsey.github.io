@@ -1,6 +1,6 @@
-FROM node:12.7-alpine
+FROM node:12.13.1
 
-ENV APP_DIR /src/app/
+ENV APP_DIR /src/app
 
 RUN mkdir -p $APP_DIR
 
@@ -8,10 +8,10 @@ WORKDIR ${APP_DIR}
 
 ADD ./package.json .
 
-RUN ["npm", "install"]
+RUN npm install
 
 COPY . .
 
-RUN chown -R node:node $APP_DIR
+RUN chown -R node:node .
 
 USER node
