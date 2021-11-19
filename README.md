@@ -6,14 +6,10 @@ A navigation menu that expands and collapses properly at desktop and mobile size
 JavaScript Features List 
 Show/hide one or more content areas or elements on your site through clicking a button or some other user interaction - must be done with some JavaScript code. - Sometimes I don't care for looking at a list so I created a show/hide button for the wildflower plants. 
 
-Created a function that returned a message on the webpage "name" . 
-Created a while and for loop that showed up in the console. 
-Created an array in the console.
-Created a conditional that showed up in the console. 
 
-Read and parse an external file (such as JSON or CSV) into your application and display some data from that in your app
-Implement a regular expression (regex) to ensure a field either a phone number or an email address is always stored and displayed in the same format
-Build a conversion tool that converts user input to another type and displays it (ex: converts cups to grams)
+Read and parse an external file (such as JSON or CSV) into your application and display some data from that in your app.
+Implement a regular expression (regex) to ensure a field either a phone number or an email address is always stored and displayed in the same format.
+Build a conversion tool that converts user input to another type and displays it (ex: converts cups to grams).
 
 
 Scud script downloaded. 

@@ -3,13 +3,13 @@ function Flights() {
         //1500.7
         if (numPassengers < 0 || numPassengers % 1 !== 0) {
             throw new Error(
-                "The number of passengers must be a positive integer value"
+                "The number of petals must be a positive integer value"
             ); 
         }
 
         if (capacity < 0 || capacity % 1 !== 0) {
             throw new Error(
-                "The capacity of the flight must be a positive integer value"
+                "The capacity of the flower must be a positive integer value"
                 );
         } 
         
@@ -54,3 +54,5 @@ function Flights() {
 }
 
 module.exports = Flights();
+
+
