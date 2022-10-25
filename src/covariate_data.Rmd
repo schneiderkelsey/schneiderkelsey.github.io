@@ -1,0 +1,306 @@
+---
+title: "covariate_data"
+author: "Jeffrey Minucci"
+output:
+#  pdf_document:
+#    toc: yes
+  html_document:
+    toc: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Introduction
+========================================================
+Covariate analysis for 2015 rare data collected by Ohio State.
+
+Goals:  
+
+1. Determine whether neonic concentrations in field pollen or dead bee samples were related to the percent coverage of corn planted nearby.
+2. Determine whether neonic concentrations in field pollen or dead bee samples were linked with greater bee mortality.  
+
+Distribution
+========================================================
+The git repo holding this code is available at:
+https://github.com/puruckertom/rare_pollen  
+
+Computational environment
+========================================================
+
+```{r eval=FALSE, echo=FALSE}
+#library(installr) #windows only currently
+#updateR()
+```
+Version and installed libraries.
+```{r eval=TRUE, echo=TRUE}
+verbose_output = TRUE
+
+if(verbose_output){
+  print(Sys.info()[4])
+  R.Version()$version.string
+}
+#check to see if needed packages are installed
+list.of.packages <- c("ggplot2", "dplyr")
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+if(length(new.packages)) install.packages(new.packages)
+#load relevant packages
+library(MASS)
+library(dplyr, warn.conflicts = FALSE)
+library(ggplot2)
+library(reshape2)
+
+if(verbose_output){
+  print("list of loaded packages: ")
+  print((.packages()))
+}
+```
+
+```{r eval=TRUE, echo=FALSE}
+if(Sys.info()[4]=="DZ2626UTPURUCKE"){
+  rare_data <- "k:\\git\\rare_pollen\\"
+} else if(Sys.info()[4]=="stp-air.local" || Sys.info()[4]=="stp-air"){
+  rare_data <- path.expand("~/git/rare_pollen/")
+} else
+  rare_data <- paste(getwd(),"/",sep="")
+  
+osu_data <- paste(rare_data, "data_in/", sep="")
+```
+<br><br>
+
+Analytical data
+========================================================
+##### Original file with observational data: 
+https://github.com/puruckertom/rare_pollen/blob/master/data_in/rare_data_osu_2015.csv
+
+```{r eval=TRUE, echo=TRUE}
+##################
+#the data sets
+##################
+#import raw data - everything
+file.exists(paste(osu_data,"CDRC_2017EPA_FP_DBT.csv",sep=""))
+osu_covariate <- read.table(paste(osu_data,"CDRC_2017EPA_FP_DBT.csv",sep=""), header = TRUE, sep = ",",strip.white=T,na.strings="")
+
+```
+
+<br>
+
+##### Cleaning the data:
+
+```{r eval=TRUE, echo=TRUE}
+osu_covariate <- osu_covariate[-22,1:23]
+colnames(osu_covariate)[c(4,6)] <- c("planting","per_corn")
+osu_covariate$planting<- factor(osu_covariate$planting,labels=c("no","yes"))
+neonics_cols <- which(grepl("DBT|FP",colnames(osu_covariate))& !grepl("sample_id",colnames(osu_covariate)))
+
+#Create categorical vars which track whether any given neonic was detected
+neonics_detected <- as.data.frame(lapply(osu_covariate[,neonics_cols],function(x) ifelse((grepl("<",x) | is.na(x)),0,1)))
+colnames(neonics_detected) <- paste(colnames(neonics_detected),"detected",sep="_")
+osu_covariate <- cbind(osu_covariate,neonics_detected)
+
+#Create two single categorical vars which tracks whether ANY neonic was detected in dead bees or pollen
+osu_covariate$DBT_any_detected <- ifelse(rowSums(neonics_detected[,grepl("DBT",colnames(neonics_detected))]) > 0,1,0)
+osu_covariate$FP_any_detected <- ifelse(rowSums(neonics_detected[,grepl("FP",colnames(neonics_detected))]) > 0,1,0)
+
+
+#convert neonic concs to numeric
+osu_covariate[,neonics_cols] <- as.numeric(gsub("< ","",as.matrix(osu_covariate[,neonics_cols])))
+
+#create variables for total neonic loads
+osu_covariate$DBT_total_neonic <- rowSums(osu_covariate[,grepl("DBT",colnames(osu_covariate))& !grepl("sample_id|detected",colnames(osu_covariate))])
+
+osu_covariate$FP_total_neonic <- rowSums(osu_covariate[,grepl("FP",colnames(osu_covariate))& !grepl("sample_id|detected",colnames(osu_covariate))])
+
+neonics_cols <- c(neonics_cols,which(colnames(osu_covariate) %in% c("DBT_total_neonic","FP_total_neonic")))
+
+#write.csv(osu_covariate,"data_in/CDRC_2017EPA_FP_DBT_clean.csv",row.names=FALSE) #output a csv for the cleaned data
+
+#str(osu_covariate) #display summary of cleaned dataframe
+
+```
+<br><br>
+
+Exploring the data
+========================================================
+
+<br>
+
+#### Let's make a quick scan for correlations in the data....
+
+<br>
+
+
+##### Any correlations between the percent corn nearby and the neonic concentrations?
+
+```{r eval=TRUE, echo=TRUE}
+
+for(i in 1:length(neonics_cols)){
+  cor <- cor.test(osu_covariate$per_corn, osu_covariate[,neonics_cols[i]])
+  cat("\n",paste("Correlation between % corn and ",
+                 ifelse(substr(colnames(osu_covariate[,neonics_cols])[i],1,2)=="FP",
+                        paste("field pollen",substr(colnames(osu_covariate[,neonics_cols])[i],4,20)),
+                        paste("dead bees",substr(colnames(osu_covariate[,neonics_cols])[i],5,20))),":",sep=""),
+      paste("Pearson's correlation: ",round(cor$estimate,2),', p-value: ',
+            ifelse(cor$p.value < 0.001,"<0.001",round(cor$p.value,3)),ifelse(cor$p.value < 0.05,"***",""),sep=""),sep="\n")
+}
+
+```
+
+**It looks like there are near-significant postive correlations between *% corn* and two neonics, *thiamethoxam* and *clothianidin*, in pollen as well as *total neonic load* in pollen. **
+<br><br>
+
+##### What if we just look at this relationship during defined corn planting periods?
+
+```{r eval=TRUE, echo=TRUE, warning=FALSE}
+
+for(i in 1:length(neonics_cols)){
+  cor <- cor.test(subset(osu_covariate,planting=="yes")$per_corn, subset(osu_covariate,planting=="yes")[,neonics_cols[i]])
+  cat("\n",paste("Correlation between % corn and ",
+                 ifelse(substr(colnames(osu_covariate[,neonics_cols])[i],1,2)=="FP",
+                        paste("field pollen",substr(colnames(osu_covariate[,neonics_cols])[i],4,20)),
+                        paste("dead bees",substr(colnames(osu_covariate[,neonics_cols])[i],5,20))),":",sep=""),
+      paste("Pearson's correlation: ",round(cor$estimate,2),', p-value: ',
+            ifelse(cor$p.value < 0.001,"<0.001",round(cor$p.value,3)),ifelse(cor$p.value < 0.05,"***",""),sep=""),sep="\n")
+}
+
+```
+
+**During planting periods, there are significant correlations between *thiamethoxam* and *clothianidin* in pollen, as well as *total neonic pollen load.* We may want to focus some analyses on these two chemicals. **
+<br><br><br>
+
+
+##### What about correlations between bee mortality and the neonic concentrations?
+
+```{r eval=TRUE, echo=TRUE}
+for(i in 1:length(neonics_cols)){
+  cor <- cor.test(osu_covariate$mortality, osu_covariate[,neonics_cols[i]])
+  cat("\n",paste("Correlation between mortality and ",
+                 ifelse(substr(colnames(osu_covariate[,neonics_cols])[i],1,2)=="FP",
+                        paste("field pollen",substr(colnames(osu_covariate[,neonics_cols])[i],4,20)),
+                        paste("dead bees",substr(colnames(osu_covariate[,neonics_cols])[i],5,20))), ":",sep=""),
+      paste("Pearson's correlation: ",round(cor$estimate,2),', p-value: ',
+            ifelse(cor$p.value < 0.001,"<0.001",round(cor$p.value,3)),ifelse(cor$p.value < 0.05,"***",""),sep=""),sep="\n")
+}
+
+```
+<br><br>
+
+**There are strong positive correlations between mortality and the same two neonics, *thiamethoxam* and *clothianidin*, for field pollen samples. There is also a significant positive correlation for *total neonic load* in pollen.**  
+<br><br>
+
+
+Regression analysis - are there higher neonic loads when there's more corn nearby?
+==========================================
+<br><br>
+
+##### We will model *neonic concentrations* as a function of *percent corn* nearby and whether measurement occured during the *corn planting period*. 
+##### If we see a significant interaction between *percent corn* and *planting period*, then there is evidence that the effect of corn is different during planting periods.  
+
+##### Lets start by looking at the just two neonics that we previously identified, as well as a total pollen neonic load:
+
+<br>
+
+```{r eval=TRUE, echo=TRUE}
+interesting_neonics <- c("FP_thiamethoxam","FP_clothianidin","FP_total_neonic")
+
+for(i in 1:length(interesting_neonics)){
+  fm <- lm(as.formula(paste(interesting_neonics[i],"~ per_corn * planting",
+                            sep="")),data=osu_covariate)
+  cat("-------------------------------------\n\n",paste("Linear regression, ",interesting_neonics[i]," vs percent corn:",sep=""),"\n")
+  print(summary(fm))
+  #hist(resid(fm))
+}
+
+```
+
+**Summary: concentrations of these two neonics in pollen, as well as total neonic load, were increased when more corn was planted nearby, but ONLY during corn planting periods (see significant positive *percent corn by planting interaction*). **
+
+**Note: significant relationships do not hold if we remove the site with very high neonic concentrations.**    
+
+<br><br>
+
+##### Let's graph how percent corn nearby affects field pollen concentrations of these neonics, by planting period:
+<br>
+
+```{r eval=TRUE, echo=TRUE}
+
+for(i in 1:length(interesting_neonics)){
+  g <- ggplot(osu_covariate,aes_string("per_corn",interesting_neonics[i]))+geom_point(na.rm=T,size=2.5)+
+    geom_smooth(method="lm",formula=y~x,na.rm=T,size=2)+facet_wrap(~planting,nrow=1,labeller=label_both)+theme_bw()+
+    theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank())+
+    coord_cartesian(ylim=c(0,max(osu_covariate[,interesting_neonics[i]],na.rm=T)+10)) +
+    labs(x="Percent corn within 2 km",y=paste(ifelse(substr(interesting_neonics[i],1,2)=="FP",
+                        paste("field pollen",substr(interesting_neonics[i],4,20)),
+                        paste("dead bees",substr(interesting_neonics[i],5,20))),"ng g-1"))
+  print(g)
+}
+
+```
+
+<br><br>
+
+##### Let's do a check to see if there are similar relationships for any other neonics (in pollen or dead bees)
+Note: output not shown <br>
+
+```{r eval=FALSE, echo=TRUE}
+neonics_to_eval <- colnames(osu_covariate)[which(grepl("FP|DBT",colnames(osu_covariate))& !grepl("FP_clothianidin|FP_thiamethoxam|FP_total_|detected|sample_id",colnames(osu_covariate)))]
+
+for(i in 1:length(neonics_to_eval)){
+  fm <- lm(as.formula(paste(neonics_to_eval[i],"~ per_corn * planting",
+                            sep="")),data=osu_covariate)
+  cat("\n",paste("Linear regression, ",neonics_to_eval[i]," vs percent corn:",sep=""),"\n")
+  print(summary(fm))
+  #hist(resid(fm))
+}
+```
+
+
+**Summary: not seeing any other significant relationships.**  
+<br><br>
+
+
+Regression analysis - is mortality higher when neonic loads are higher?
+==========================================
+<br>
+
+```{r eval=TRUE, echo=TRUE}
+
+for(i in 1:length(interesting_neonics)){
+  fm <- lm(as.formula(paste("mortality ~ ",interesting_neonics[i],
+                            sep="")),data=osu_covariate)
+  cat("-------------------------------------\n\n",
+      paste("Linear regression, ",interesting_neonics[i]," vs mortality:",sep=""),"\n")
+  print(summary(fm))
+  #hist(resid(fm))
+  g <- ggplot(osu_covariate,aes_string(interesting_neonics[i],"mortality"))+geom_point(na.rm=T,size=2.5)+
+    geom_smooth(method="lm",formula=y~x,na.rm=T,size=2)+theme_bw()+
+    theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank()) +
+    labs(x=paste(ifelse(substr(interesting_neonics[i],1,2)=="FP",
+                        paste("field pollen",substr(interesting_neonics[i],4,20)),
+                        paste("dead bees",substr(interesting_neonics[i],5,20))),"ng g-1"),
+         y="Relative bee mortality")+geom_hline(yintercept=0)
+  print(g)
+}
+```
+<br><br>
+
+**Summary: As concentrations of *thiamethoxam*, *clothianidin* and *total neonics* in field pollen increased, there was greater bee mortality. **
+
+**Note: these relationships hold even if you remove the site with very high neonic concentrations.**  
+
+<br><br>
+
+Summary of initial findings
+================================
+<br>
+
+1. During corn planting periods only... there were greater concentrations of two neonic insecticides, **thiamethoxam** and **clothianidin**, and greater **total neonic concentrations** in field pollen when there was more corn planted nearby (within 2 km). The corn effect *does not* hold if we remove one observation that had very high **clothianidin** and **thiamethoxam** levels. 
+
+2. Greater concentrations of these same neonics, as well as total neonic load, were associated with increased bee mortality. This effect holds even with the very high observation removed. 
+
+3. No significant relationships were found for other neonics measured in field pollen, or for any measurements from dead bees.  
+
+<br>
+osu_covariate$FP_clothianidin
+

@@ -1,0 +1,152 @@
+---
+title: "rare_data"
+output:
+#  pdf_document:
+#    toc: yes
+  html_document:
+    toc: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Introduction
+========================================================
+General descriptive statistics for 2015 rare data collected by Ohio State.
+
+Distribution
+========================================================
+The git repo holding this code is available at:
+https://github.com/puruckertom/rare_pollen
+
+Computational environment
+========================================================
+
+```{r eval=FALSE, echo=FALSE}
+#library(installr) #windows only currently
+#updateR()
+```
+Version and installed libraries.
+```{r eval=TRUE, echo=TRUE}
+verbose_output = TRUE
+
+if(verbose_output){
+  print(Sys.info()[4])
+  R.Version()$version.string
+}
+#check to see if needed packages are installed
+list.of.packages <- c("ggplot2", "dplyr")
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+if(length(new.packages)) install.packages(new.packages)
+#load relevant packages
+library(MASS)
+library(dplyr, warn.conflicts = FALSE)
+library(ggplot2)
+library(reshape2)
+
+if(verbose_output){
+  print("list of loaded packages: ")
+  print((.packages()))
+}
+```
+
+```{r eval=TRUE, echo=FALSE}
+if(Sys.info()[4]=="DZ2626UTPURUCKE"){
+  rare_data <- "k:\\git\\rare_pollen\\"
+}
+
+if(Sys.info()[4]=="stp-air.local" || Sys.info()[4]=="stp-air"){
+  rare_data <- path.expand("~/git/rare_pollen/")
+}
+
+osu_data <- paste(rare_data, "data_in/", sep="")
+```
+
+Analytical data
+========================================================
+Original file with observational data: 
+https://github.com/puruckertom/rare_pollen/blob/master/data_in/rare_data_osu_2015.csv
+
+```{r eval=TRUE, echo=TRUE}
+##################
+#the data sets
+##################
+#import raw data - everything
+file.exists(paste(osu_data,"rare_data_osu_2015.csv",sep=""))
+osu_obs <- read.table(paste(osu_data,"rare_data_osu_2015.csv",sep=""), header = TRUE, sep = ",")
+str(osu_obs)
+
+#melt to long format
+keepers <- colnames(osu_obs)[1:11] #through media column
+osu_concs <- melt(osu_obs, id.vars = keepers, variable.name = "neonic", value.name = "conc")
+dim(osu_concs)
+colnames(osu_concs)
+
+#add detected field and numerical concentration
+#osu_concs$conc
+osu_concs$detected <- ifelse(grepl("<", osu_concs$conc),0,1)
+osu_concs$conc2 <- as.numeric(gsub("< ", "", osu_concs$conc))
+#View(osu_concs)
+
+```
+
+Summary statistics
+```{r eval=TRUE, echo=TRUE}
+str(osu_concs)
+
+#aggregate(osu_concs$conc2, list(osu_concs$neonic), mean)
+summary(osu_concs)
+
+neonics <- unique(osu_concs$neonic)
+medias <- unique(osu_concs$media)
+sites <- unique(osu_concs$site)
+site_abbrvs <- unique(osu_concs$site_abbrv)
+plot_colors <- c("aquamarine4", "bisque", "blue3", "brown", "chartreuse4",
+                 "cornflowerblue", "darkgoldenrod3", "darkkhaki", "darkmagenta", "darkorange1")
+for(i in 1:10){ #10
+  selected_media <- medias[i]
+  hist_medias <- which(osu_concs$media==selected_media) #7
+  for(j in 1:7){
+    selected_neonic <- neonics[j]
+    hist_neonics <- which(osu_concs$neonic==selected_neonic)
+    hist_intersect <- intersect(hist_neonics, hist_medias)
+    hist_extract <- osu_concs[hist_intersect,]
+    plot_title = paste(selected_neonic, "in", selected_media)
+    n_data <- dim(hist_extract)[[1]]
+    n_detects <- sum(hist_extract$detected)
+    min_data <- round(min(hist_extract$conc2), digits=3)
+    mean_data <- round(mean(hist_extract$conc2), digits=3)
+    max_data <- round(max(hist_extract$conc2), digits=3)
+    x_label = paste("ng/g (min, mean, max =", min_data, ",", mean_data,",",max_data,")","\n",
+                    "detection frequency =", n_detects, "/", n_data)
+    #plot overall histogram for media and neonic combination
+    hist(hist_extract$conc2, main = plot_title, xlab=x_label, ylab="Frequency", col=plot_colors[i])
+    #plot sideways boxplot by site for each media and neonic combination
+    boxplot(conc2~site_abbrv,data=hist_extract, main=plot_title, horizontal=TRUE,las=2, col=plot_colors[i])
+    #plot sideways barchart of detection proportion by site for each media and neonic combination
+    detfreq.df <- data.frame(matrix(NA, nrow = 11, ncol = 4))
+    colnames(detfreq.df) <- c('site','detects','count','det_prop')
+
+    for(k in 1:11){
+      selected_site_abbrv <- site_abbrvs[k]
+      detfreq.df$site[k] <- selected_site_abbrv
+      which_extract_site <- which(hist_extract$site_abbrv==selected_site_abbrv)
+      site_extract <- hist_extract[which_extract_site,]
+      n_data_site <- dim(hist_extract)[[1]]
+      detfreq.df$count[k] <- n_data_site
+      n_detects_site <- sum(hist_extract$detected)
+      detfreq.df$detects[k] <- n_detects_site
+      if(n_data_site >0){
+        det_prop_site <- n_detects_site/n_data_site
+      }else{
+        det_prop_site <- 0
+      }
+      detfreq.df$det_prop[k] <- det_prop_site
+    }
+    #plot time series by site for each media and neonic combination
+    barplot(detfreq.df$det_prop,main="Page Views", horiz=TRUE,names.arg=detfreq.df$site,las=1)
+  }
+}
+
+```
