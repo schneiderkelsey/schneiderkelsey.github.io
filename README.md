@@ -28,3 +28,6 @@ rare_pollen
 # rare_pollen
 >>>>>>> 0ba96a1660135b33506f674e91f60fe3eb5d5468
 osu pollen analysis comparison
+
+Made a dictionary to read in data for program.
+Used built-in pandas to do things like remove 0’s and null values where they don’t belong in dataset. 
