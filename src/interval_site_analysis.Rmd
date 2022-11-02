@@ -1,0 +1,798 @@
+---
+title: "interval_site_analysis"
+author: "Jeff Minucci"
+date: "January 8, 2018"
+output: 
+ html_document:
+    toc: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+Introduction
+========================================================
+Analysis of 2015 rare data collected by Ohio State - at the site level 
+
+To address:
+
+1. Neonics are expressed as sums of the concentrations detected at each sampling date, during the period of interest. It would be more appropriate to take the mean of these concentrations. This should make these values easier to interpret. **Note:** this should not change the results, as each site had the same number of measurements during each period. However, if this were not true, taking sums would lead to erroneous differences between sites.  
+
+2. Changes in hive health are expressed in absolute terms, but they may depend on the initial values. For example, a hive that starts with fewer bees may have more potential for growth (or maybe less?). We can try using linear regression models that include the initial values as a covariate. 
+
+3. Changes in hive health could also be related to differences in pollen collection (which may in turn be driven by percent corn nearby). We can try using the change in pollen area as a covariate. 
+
+4. Instead of throwing out a whole site, we can remove the one sampling point that had the very high clo and thia concentrations
+
+Distribution
+========================================================
+The git repo holding this code is available at:
+https://github.com/puruckertom/rare_pollen  
+
+Computational environment
+========================================================
+
+```{r eval=FALSE, echo=FALSE}
+#library(installr) #windows only currently
+#updateR()
+```
+Version and installed libraries.
+```{r eval=TRUE, echo=TRUE}
+verbose_output = TRUE
+
+if(verbose_output){
+  print(Sys.info()[4])
+  R.Version()$version.string
+}
+#check to see if needed packages are installed
+list.of.packages <- c("ggplot2", "dplyr","corrplot","nlme")
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+if(length(new.packages)) install.packages(new.packages)
+#load relevant packages
+library(MASS)
+library(dplyr, warn.conflicts = FALSE)
+library(ggplot2)
+library(reshape2)
+library(corrplot)
+library(nlme)
+
+if(verbose_output){
+  print("list of loaded packages: ")
+  print((.packages()))
+}
+```
+
+```{r eval=TRUE, echo=FALSE}
+if(Sys.info()[4]=="DZ2626UTPURUCKE"){
+  rare_data <- "k:\\git\\rare_pollen\\"
+} else if(Sys.info()[4]=="stp-air.local" || Sys.info()[4]=="stp-air"){
+  rare_data <- path.expand("~/git/rare_pollen/")
+} else
+  rare_data <- paste(getwd(),"/",sep="")
+  
+osu_data <- paste(rare_data, "data_in/", sep="")
+```
+<br><br>
+
+Analytical data
+========================================================
+##### Original file with observational data: 
+https://github.com/puruckertom/rare_pollen/blob/master/data_in/rare_data_osu_2015.csv
+
+```{r eval=TRUE, echo=TRUE}
+##################
+#the data sets
+##################
+#import raw data - everything
+#file.exists(paste(osu_data,"CDRC_2017EPA_FP_DBT.csv",sep=""))
+
+#Using neonic dataset with one high outlier sampling point removed (site FSR, 5/2/2015)
+osu_covariate <- read.table(paste(osu_data,"CDRC_2017EPA_FP_DBT_clean_no_outlier.csv",sep=""), header = TRUE, 
+                            sep = ",",strip.white=T,na.strings=c("","NA"))
+interval_site <- read.csv(paste(osu_data,"interval_site_level.csv",sep=""),header=T, stringsAsFactors = T)
+
+```
+
+<br>
+
+##### Clean and format the data:
+
+```{r eval=TRUE, echo=TRUE}
+
+## Clean site-level interval data
+
+# Make column names consistent
+colnames(interval_site)[1:4] <- c("site_code","interval","n_hives","per_corn")
+colnames(interval_site) <- gsub("mean.","",tolower(colnames(interval_site)))
+colnames(interval_site) <- ifelse(substr(colnames(interval_site),nchar(colnames(interval_site)),
+                                         nchar(colnames(interval_site))) == ".",substr(colnames(interval_site),1,nchar(colnames(interval_site))-1),colnames(interval_site))
+colnames(interval_site) <- gsub("\\.","_",colnames(interval_site))
+
+# Remove sums of neonic concentrations
+interval_site <- interval_site[,!colnames(interval_site) %in% 
+                                 c("sumclo_plt","sumclo_all","sumct_plt","sumct_all","sumneo_all")]
+
+# Assign types
+interval_site$interval <- factor(interval_site$interval,levels=c(1,2,3))
+interval_site$per_corn <- interval_site$per_corn*100
+
+
+## Create site-level means of the interesting neonics (thiamethoxam and clothianidin) over the planting period and all of May
+## For merging with interval_site dataset
+
+mean_may <- aggregate(cbind(FP_thiamethoxam, FP_clothianidin, FP_total_neonic)~site_code,data=osu_covariate,FUN=mean,na.rm=T)
+colnames(mean_may)[2:4] <- c("mean_thi_may", "mean_clo_may","mean_total_may") 
+
+mean_planting <- aggregate(cbind(FP_thiamethoxam, FP_clothianidin, FP_total_neonic)~site_code,data=subset(osu_covariate,planting=='yes'),FUN=mean,na.rm=T)
+colnames(mean_planting)[2:4] <- c("mean_thi_planting", "mean_clo_planting","mean_total_planting") 
+
+site_means <- cbind(mean_may,mean_planting[,-1])
+
+#Make site names consistent between datasets
+levels(site_means$site_code) <- c(levels(site_means$site_code),"MB","MO")
+site_means[site_means$site_code =="MC","site_code"] <- "MB"
+site_means[site_means$site_code =="MM","site_code"] <- "MO"
+site_means$site_code <- droplevels(site_means$site_code)
+
+## Inner join mean neonic conc. with site-level interval data
+interval_site <- merge(interval_site,site_means,by="site_code")
+
+
+#str(interval_site)
+
+# Write cleaned data to csv
+#write.csv(interval_site,paste(osu_data,"interval_site_level_clean.csv",sep=""))
+
+
+## Convert intervals from long to wide
+keep<- colnames(interval_site)[!grepl("chg|interval|n_hives",colnames(interval_site))]
+site_wide <- reshape(interval_site,idvar=keep,timevar="interval",direction="wide",sep="_",
+                     drop=c("n_hives"),new.row.names=c(1:10))
+
+## Make variables for total change (first observation to final observation)
+hive_vars <- c("seam","bee","cap","open","pollen","nectar")
+for(i in 1:length(hive_vars)){
+  new_var <- rowSums(site_wide[,paste(hive_vars[i],c("1","2","3"),sep="_chg_")])
+  site_wide[[paste(hive_vars[i],"_chg_total",sep="")]] <- new_var
+}
+
+```
+
+
+Create initial value variables (and relative change variables - IN PROGRESS)
+=============================
+Changes in hive health may be more meaningful if they are expressed relative to the initial values.  
+
+We may also want to use the initial values as covariates in regression models, if we do use absolute changes. 
+
+
+```{r eval=T, echo=T}
+
+#Read data, fix column names
+frame_data <- read.csv(paste(osu_data,"raw_frame_data.csv",sep=""),stringsAsFactors = T)[1:153,-c(25:34)]
+colnames(frame_data) <- gsub("\\.comb","per_comb",colnames(frame_data))
+colnames(frame_data) <- tolower(gsub("\\.","",colnames(frame_data)))
+colnames(frame_data)[3] <- "per_corn"
+frame_data[,grepl("per_comb",colnames(frame_data))] <- as.numeric(gsub("%","",as.matrix(frame_data[,grepl("per_comb",colnames(frame_data))])))
+frame_data[["per_corn"]] <- as.numeric(gsub("%","",as.matrix(frame_data[,"per_corn"])))
+
+#Make site DS hive_no consistent ** Note: need to find out what's going on with these DS hives
+frame_data$hive_no[frame_data$hive_no == 31.01] <- 31
+frame_data$hive_no[frame_data$hive_no == 31.02] <- 32
+
+
+#convert long to wide format
+keep <- colnames(frame_data)[!grepl("cm2|comb|bees|yr_site|date|varroa|month",colnames(frame_data))]
+frame_wide <- reshape(frame_data,idvar=keep,timevar="month",direction="wide",sep="_",
+                     drop=c("yr_site","date","varroaincomplete"))
+colnames(frame_wide)[1] <- "site_code"
+
+
+##create relative change variables for entire study length (april to august) - for each hive
+
+total_chg <- (frame_wide[,grepl("_8",colnames(frame_wide))] - frame_wide[,grepl("_4",colnames(frame_wide))]) / frame_wide[,grepl("_4",colnames(frame_wide))] * 100
+
+total_chg <- cbind(hive_no = frame_wide$hive_no, site_code = frame_wide$site_code,total_chg)
+total_chg <- do.call(data.frame,lapply(total_chg, function(x) replace(x, is.infinite(x),NA)))
+colnames(total_chg)[2:ncol(total_chg)] <- gsub("_8","_pchg_total",colnames(total_chg)[2:ncol(total_chg)]) 
+
+#create relative change vars for intervals 1, 2 and 3
+months <- c(4,5,6,8)
+
+
+
+##create initial value variables
+
+initial <- cbind(hive_no = frame_wide$hive_no,site_code = frame_wide$site_code, frame_wide[,grepl("_4",colnames(frame_wide))])
+colnames(initial)[2:ncol(initial)] <- gsub("_4","_initial",colnames(initial)[2:ncol(initial)]) 
+
+
+#merge with original frame data to create a hive level dataset
+new_vars <- merge(total_chg[-2],initial[,-2],by="hive_no")
+frame_wide <- merge(frame_wide,new_vars,by="hive_no")
+
+#bring in neonic concentrations from site level data
+frame_wide <- merge(site_wide[,grepl("mean_t|mean_clo|site_code",colnames(site_wide))],frame_wide,by="site_code")
+
+#Write new frame level dataset (in wide format)
+#write.csv(frame_wide,paste(osu_data,"frame_data_expanded.csv",sep=""))
+
+#Merge initial hive variables into our original site-level dataset
+aggregated_initial <- aggregate( . ~ site_code  ,data=frame_wide[,grepl("_initial|site_code",colnames(frame_wide))],
+                                 FUN=mean,na.rm=T)
+aggregated_initial <- aggregated_initial[,grepl("site_code|seam|bees|capped|open|pollen|nectar",colnames(aggregated_initial)) & 
+                                           !grepl("per_comb",colnames(aggregated_initial))] #keep only columns in initial (wide) site-level dataset
+colnames(aggregated_initial)[2:7] <- c("seam_initial","bee_initial","cap_initial","open_initial","pollen_initial","nectar_initial")
+site_wide <- merge(site_wide,aggregated_initial,by="site_code")
+
+#remove variable for ALL neonics and replace with Clo + Thi (to be consistent with manuscript)
+site_wide$mean_total_may <- site_wide$mean_clo_may + site_wide$mean_thi_may
+site_wide$mean_total_planting <- site_wide$mean_clo_planting + site_wide$mean_thi_planting
+colnames(site_wide)[colnames(site_wide) == "mean_total_may"] <- "mean_ct_may"
+colnames(site_wide)[colnames(site_wide) == "mean_total_planting"] <- "mean_ct_planting"
+
+
+###Create hive health regression slopes (entire time interval)
+
+frame_data$time <- frame_data$month - 4
+frame_data$hive_no <- factor(frame_data$hive_no)
+health_vars <- c("seams_bees","bees_cm2","capped_cm2","open_cm2","pollen_cm2","nectar_cm2")
+sites <- levels(frame_data$site_abv)[2:11]
+betas_site <- matrix(,nrow=length(sites),ncol=length(health_vars))
+for(i in 1:length(health_vars)){
+  
+  
+  for(j in 1:length(sites)){
+    betas_site[j,i] <- lm(as.formula(paste(health_vars[i],"~ time")),data=subset(frame_data,site_abv == sites[j]))$coefficients[2]
+    
+  }
+}
+betas_site <- data.frame(site_abv = sites, betas_site)
+colnames(betas_site) <- c("site_code",health_vars)
+
+#Merge hive health regression slopes back to site level wide dataset 
+site_wide <- merge(site_wide,betas_site,by = "site_code")
+
+
+###Create hive health regression slopes (time points 1 to 3)
+
+health_vars <- c("seams_bees","bees_cm2","capped_cm2","open_cm2","pollen_cm2","nectar_cm2")
+sites <- levels(frame_data$site_abv)[2:11]
+betas_site <- matrix(,nrow=length(sites),ncol=length(health_vars))
+for(i in 1:length(health_vars)){
+  
+  
+  for(j in 1:length(sites)){
+    betas_site[j,i] <- lm(as.formula(paste(health_vars[i],"~ time")),data=subset(frame_data,site_abv == sites[j] & time != 4))$coefficients[2]
+    
+  }
+}
+betas_site <- data.frame(site_abv = sites, betas_site)
+colnames(betas_site) <- c("site_code",paste(health_vars,"1st",sep="_"))
+
+#Merge hive health regression slopes back to site level wide dataset 
+site_wide <- merge(site_wide,betas_site,by = "site_code")
+
+
+
+###Create hive health regression slopes (final time period)
+
+health_vars <- c("seams_bees","bees_cm2","capped_cm2","open_cm2","pollen_cm2","nectar_cm2")
+sites <- levels(frame_data$site_abv)[2:11]
+betas_site <- matrix(,nrow=length(sites),ncol=length(health_vars))
+for(i in 1:length(health_vars)){
+  
+  
+  for(j in 1:length(sites)){
+    betas_site[j,i] <- lm(as.formula(paste(health_vars[i],"~ time")),data=subset(frame_data,site_abv == sites[j] & !(time %in% c(0,1))))$coefficients[2]
+    
+  }
+}
+betas_site <- data.frame(site_abv = sites, betas_site)
+colnames(betas_site) <- c("site_code",paste(health_vars,"2nd",sep="_"))
+
+#Merge hive health regression slopes back to site level wide dataset 
+site_wide <- merge(site_wide,betas_site,by = "site_code")
+
+```
+
+
+Correlation structure
+=============================
+
+```{r eval=T, echo=T,fig.width=6,fig.height=6}
+
+res <- cor.mtest(site_wide[,c(2:28)])
+corrplot(cor(site_wide[,c(2:28)]),type="upper",tl.col="black",tl.srt=90,p.mat=res$p,
+         insig="label_sig",pch="*",pch.cex=1,pch.col="white")
+
+
+```
+<br>
+
+What about for cumulative hive changes our the entire study period? 
+
+```{r eval=T, echo=T,fig.width=4,fig.height=4}
+
+res <- cor.mtest(site_wide[,c(2:10,29:34)])
+corrplot(cor(site_wide[,c(2:10,29:34)]),type="upper",tl.col="black",tl.srt=90,p.mat=res$p,
+         insig="label_sig",pch="*",pch.cex=1,pch.col="white")
+```
+
+Colony health - PCA
+=============================
+Can we reduce our colony growth variables to fewer dimensions?  
+
+* It appears that changes in **area covered by bees** and **seams filled with bees** are postively correlated.  
+
+* Changes in area containing **open** and **capped** brood are negatively correlated with changes in area containing **nectar** 
+
+```{r eval=T, echo=T}
+
+colony_pca <- prcomp(interval_site[,7:12],center=T,scale.=T)
+summary(colony_pca)
+print(colony_pca)
+
+biplot(colony_pca)
+
+```
+
+
+Regression analysis
+=============================
+
+We have already seen that there is greater bee mortality during days when neonic concentrations in pollen are high..
+
+But does greater neonic load in pollen lead to negative hive outcomes, at time of exposure and later?  
+
+Let's also account for the initial characteristics of the hive at the start of the study. We can also try to account for the fact that hives that collect more pollen (perhaps due to corn?) may do better. 
+
+```{r eval=T, echo=T}
+
+fm_1 <- lm(seam_chg_total~mean_ct_planting + seam_initial + pollen_chg_total , data=site_wide)
+cat("-------------------------------------\n\n",
+    "Does neonic exposure during planting affect bee population change (as measured by # of seams) throughout the season?\n")
+print(summary(fm_1)) # borderline negative effect
+#hist(resid(fm_1))
+
+fm_2 <- lm(bee_chg_total~mean_ct_planting+bee_initial+pollen_chg_total,data=site_wide)
+cat("-------------------------------------\n\n",
+    "Does neonic exposure during planting affect bee population change (as measured by frame area covered by bees) throughout the season?\n")
+print(summary(fm_2)) # borderline negative effect
+#hist(resid(fm_2))
+
+
+fm_3 <- lm(open_chg_total~mean_ct_planting+open_initial+pollen_chg_total,data=site_wide)
+cat("-------------------------------------\n\n",
+    "Does neonic exposure during planting affect change in open brood area throughout the season?\n")
+print(summary(fm_3)) # significant negative effect
+#hist(resid(fm_3))
+
+
+fm_4 <- lm(cap_chg_total~mean_ct_planting+cap_initial+pollen_chg_total,data=site_wide)
+cat("-------------------------------------\n\n",
+    "Does neonic exposure during planting affect change in capped brood area throughout the season?\n")
+print(summary(fm_4)) # no effect 
+#hist(resid(fm_4))
+
+fm_5 <- lm(pollen_chg_total~mean_ct_planting*per_corn+pollen_initial,data=site_wide)
+cat("-------------------------------------\n\n",
+    "Does neonic exposure during planting affect change in pollen throughout the season?\n")
+print(summary(fm_5))# borderline positive effect on pollen change
+#hist(resid(fm_5))
+
+
+fm_6 <- lm(nectar_chg_total~mean_ct_planting+nectar_initial + pollen_chg_total,data=site_wide)
+cat("-------------------------------------\n\n",
+    "Does neonic exposure during planting affect change in nectar throughout the season?\n")
+print(summary(fm_6))# no effect 
+#hist(resid(fm_6))
+
+
+
+```
+
+What about more immediate effects during just the first interval (April-May)?
+
+```{r eval=T, echo=T}
+
+fm_1 <- lm(seam_chg_1~mean_ct_planting + seam_initial + pollen_chg_1 , data=site_wide)
+cat("-------------------------------------\n\n",
+    "Does neonic exposure during planting affect bee population change (as measured by # of seams) from April to May?\n")
+print(summary(fm_1)) # sig negative effect on seams of bees
+
+fm_2 <- lm(bee_chg_1~mean_ct_planting+bee_initial+pollen_chg_1,data=site_wide)
+cat("-------------------------------------\n\n",
+    "Does neonic exposure during planting affect bee population change (as measured by frame area covered by bees) from April to May?\n")
+print(summary(fm_2)) # no effect
+
+fm_3 <- lm(open_chg_1~mean_ct_planting+open_initial+pollen_chg_1,data=site_wide)
+cat("-------------------------------------\n\n",
+    "Does neonic exposure during planting affect change in open brood area from April to May?\n")
+print(summary(fm_3)) # no effect
+
+fm_4 <- lm(cap_chg_1~mean_ct_planting+cap_initial+pollen_chg_1,data=site_wide)
+cat("-------------------------------------\n\n",
+    "Does neonic exposure during planting affect change in capped brood area from April to May?\n")
+print(summary(fm_4)) # no effect 
+
+fm_5 <- lm(pollen_chg_1~mean_ct_planting*per_corn+pollen_initial,data=site_wide)
+cat("-------------------------------------\n\n",
+    "Does neonic exposure during planting affect change in pollen from April to May?\n")
+print(summary(fm_5))# borderline positive effect on pollen change
+
+fm_6 <- lm(nectar_chg_1~mean_ct_planting+nectar_initial + pollen_chg_1,data=site_wide)
+cat("-------------------------------------\n\n",
+    "Does neonic exposure during planting affect change in nectar from April to May?\n")
+print(summary(fm_6))# no effect 
+
+
+
+```
+
+Conclusions for site-level analysis
+========================================================
+
+
+
+
+
+
+Analyzing hive-level data through time
+=======================================================
+```{r eval=T, echo=T}
+
+#Add neonic measurements to hive-level dataset
+neonic_data <- site_wide[,grepl("_clo|_thi|_ct|site_code",colnames(site_wide))]
+frame_data <- merge(frame_data,neonic_data,by.x="site_abv",by.y = "site_code")
+
+
+
+#Look at hive health through time - as affected by clo+thi during planting
+
+fm_bees <- lm(bees_cm2 ~ mean_ct_planting * time  + site_abv, data = frame_data)
+summary(fm_bees) #bees increases through time, no effect of clo+thi during planting
+
+fm_seams <- lm(seams_bees ~ mean_ct_planting * time  +site_abv,data = frame_data)
+summary(fm_seams) # no change through time, *sig clo_thi effect*: more clo_thi during planting = less seams with bees
+
+fm_open <- lm(open_cm2 ~ mean_ct_planting * time + site_abv , data = frame_data)
+summary(fm_open) # no change through time, no effect of clo+thi during planting
+
+fm_capped <- lm(capped_cm2 ~ mean_ct_planting * time  +site_abv , data = frame_data)
+summary(fm_capped) # no change through time, no effect of clo+thi during planting
+
+fm_pollen <- lm(pollen_cm2 ~ mean_ct_planting * time  +site_abv, data = frame_data)
+summary(fm_pollen) # pollen increases through time. hives exposed to more clo_thi during planting have less pollen but this effect diminishes through time
+
+fm_nectar<- lm(nectar_cm2 ~ mean_ct_planting * time + site_abv, data = frame_data)
+summary(fm_nectar) # no change through time, no clo+thi effect
+
+
+
+#Look at hive health through time - as affected by clo+thi for ALL OF MAY
+fm_bees <- lm(bees_cm2 ~ mean_ct_planting * time  + site_abv, data = frame_data)
+summary(fm_bees) #bees increases through time, no effect of clo+thi during planting
+
+fm_seams <- lm(seams_bees ~ mean_ct_planting * time  +site_abv,data = frame_data)
+summary(fm_seams) # no change through time, *sig clo_thi effect*: more clo_thi during planting = less seams with bees
+
+fm_open <- lm(open_cm2 ~ mean_ct_planting * time + site_abv , data = frame_data)
+summary(fm_open) # no change through time, no effect of clo+thi during planting
+
+fm_capped <- lm(capped_cm2 ~ mean_ct_planting * time  +site_abv , data = frame_data)
+summary(fm_capped) # no change through time, no effect of clo+thi during planting
+
+fm_pollen <- lm(pollen_cm2 ~ mean_ct_planting * time  +site_abv, data = frame_data)
+summary(fm_pollen) # pollen increases through time. hives exposed to more clo_thi during planting have less pollen but this effect diminishes through time
+
+fm_nectar<- lm(nectar_cm2 ~ mean_ct_planting * time + site_abv, data = frame_data)
+summary(fm_nectar) # no change through time, no clo+thi effect
+
+
+
+### Example of mixed effects framework
+#pollen_mixed <- lme(pollen_cm2 ~ mean_ct_planting * time , random=~1|site_abv, data = frame_data,na.action=na.omit)
+#summary(fm_pollen)
+#library(interplot)
+#interplot(pollen_mixed, var1='mean_ct_planting',var2='time',ci=.683) #68.3 % = one standard error in normal dist
+
+```
+ 
+###Let's visualize some of these hive health parameters through time
+<br><br>
+
+Across all hives:
+```{r eval=T, echo=T}
+
+health_vars <- c("seams_bees","bees_cm2","capped_cm2","open_cm2","pollen_cm2","nectar_cm2")
+for (i in 1:length(health_vars)){
+  g <- ggplot(frame_data,aes_string("time",health_vars[i])) +geom_point(na.rm=T,size=2.5)+
+    geom_smooth(method="lm",formula=y~x,na.rm=T,size=2)+theme_bw()+
+    theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank())+
+   # coord_cartesian(ylim=c(0,max(osu_covariate[,interesting_neonics[i]],na.rm=T)+10)) +
+    labs(x="Months since April")
+  print(g)
+}
+
+```
+
+Within each site:
+
+```{r eval=T, echo=T}
+health_vars <- c("seams_bees","bees_cm2","capped_cm2","open_cm2","pollen_cm2","nectar_cm2")
+for (i in 1:length(health_vars)){
+  g <- ggplot(frame_data,aes_string("time",health_vars[i])) +geom_point(na.rm=T,size=1)+
+    geom_smooth(method="lm",formula=y~x,na.rm=T,size=1)+theme_bw()+ facet_wrap(~site_abv,nrow=3,labeller=label_both)+
+    theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank())+
+   # coord_cartesian(ylim=c(0,max(osu_covariate[,interesting_neonics[i]],na.rm=T)+10)) +
+    labs(x="Months since April")
+  print(g)
+}
+
+```
+
+
+###Let's visualize the significant clo+thi effect on seams of bees  
+
+Note: it is difficult to see this effect without accounting for the effect of time (and site?)
+<br><br>
+
+```{r eval=T, echo=T, fig.width = 5, fig.height=4}
+g <- ggplot(frame_data,aes_string("mean_ct_planting","seams_bees")) +geom_point(na.rm=T,size=2.5)+
+    geom_smooth(method="lm",formula=y~x,na.rm=T,size=2)+theme_bw()+ 
+    theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank())+
+   # coord_cartesian(ylim=c(0,max(osu_covariate[,interesting_neonics[i]],na.rm=T)+10)) +
+    labs(x="Mean clo + thi in pollen during planting")
+print(g)
+
+
+```
+
+
+
+###Finally, let's visualize the significant clo+thi effect on pollen (through time)
+
+Note: it is difficult to see this effect without accounting for the effect of time (and site?)
+<br><br>
+
+```{r eval=T, echo=T, fig.width = 5, fig.height=4}
+g <- ggplot(frame_data,aes_string("mean_ct_planting","pollen_cm2")) +geom_point(na.rm=T,size=2.5)+
+    geom_smooth(method="lm",formula=y~x,na.rm=T,size=2)+theme_bw()+ facet_wrap(~time,nrow=2,labeller=label_both)+
+    theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank())+
+   # coord_cartesian(ylim=c(0,max(osu_covariate[,interesting_neonics[i]],na.rm=T)+10)) +
+    labs(x="Mean clo + thi in pollen during planting")
+print(g)
+
+
+```
+
+
+
+Analysis using health hive through time regression slopes
+===========================================
+
+
+### Entire study
+```{r echo=T,eval=T}
+
+fm_bees <- lm(bees_cm2 ~ mean_ct_planting, data = site_wide)
+summary(fm_bees) 
+
+fm_seams <- lm(seams_bees ~  mean_ct_planting, data = site_wide)
+summary(fm_seams) 
+
+fm_open <- lm(open_cm2 ~  mean_ct_planting, data = site_wide)
+summary(fm_open) 
+
+fm_capped <- lm(capped_cm2 ~  mean_ct_planting, data = site_wide)
+summary(fm_capped) 
+
+fm_pollen <- lm(pollen_cm2 ~  mean_ct_planting, data = site_wide)
+summary(fm_pollen) #borderline sig + effect
+
+fm_nectar<- lm(nectar_cm2 ~  mean_ct_planting, data = site_wide)
+summary(fm_nectar) 
+
+
+```
+
+### First half of study
+
+```{r echo=T,eval=T}
+
+fm_bees <- lm(bees_cm2_1st ~ mean_ct_planting, data = site_wide)
+summary(fm_bees) 
+
+fm_seams <- lm(seams_bees_1st  ~  mean_ct_planting, data = site_wide)
+summary(fm_seams) 
+
+fm_open <- lm(open_cm2_1st  ~  mean_ct_planting, data = site_wide)
+summary(fm_open) 
+
+fm_capped <- lm(capped_cm2_1st  ~  mean_ct_planting, data = site_wide)
+summary(fm_capped) 
+
+fm_pollen <- lm(pollen_cm2_1st  ~  mean_ct_planting, data = site_wide)
+summary(fm_pollen) #borderline sig + effect
+
+fm_nectar<- lm(nectar_cm2_1st  ~  mean_ct_planting, data = site_wide)
+summary(fm_nectar) 
+
+
+```
+
+### Second half of study
+```{r echo=T,eval=T}
+
+fm_bees <- lm(bees_cm2_2nd ~ mean_ct_planting, data = site_wide)
+summary(fm_bees) 
+
+fm_seams <- lm(seams_bees_2nd ~  mean_ct_planting, data = site_wide)
+summary(fm_seams) 
+
+fm_open <- lm(open_cm2_2nd ~  mean_ct_planting, data = site_wide)
+summary(fm_open) 
+
+fm_capped <- lm(capped_cm2_2nd ~  mean_ct_planting, data = site_wide)
+summary(fm_capped) 
+
+fm_pollen <- lm(pollen_cm2_2nd ~  mean_ct_planting, data = site_wide)
+summary(fm_pollen) #sig + effect
+
+fm_nectar<- lm(nectar_cm2_2nd ~  mean_ct_planting, data = site_wide)
+summary(fm_nectar) 
+
+
+```
+
+
+Analyzing relative change in hive health
+=======================================================
+```{r eval=T, echo=T}
+
+
+
+health_vars <- c("seams_bees","bees_cm2","capped_cm2","open_cm2","pollen_cm2","nectar_cm2")
+months <- c("4","5","6","8")
+frame_wide_simple <- frame_wide[,colnames(frame_wide) %in% c("hive_no","site_code",as.vector(outer(health_vars,months,paste,sep="_")))]
+
+# take averages at site level
+aggregated_site <- aggregate( . ~ site_code  ,data=frame_wide_simple[,-2],FUN=mean,na.rm=T)
+
+# relative changes for each interval (and overall)
+for(i in 1:length(health_vars)){
+  aggregated_site[[paste(strsplit(health_vars[i],"_")[[1]][1],"_relchg_1",sep="")]] <- (aggregated_site[[paste(health_vars[i],"_5",sep="")]] - aggregated_site[[paste(health_vars[i],"_4",sep="")]]) / 
+    aggregated_site[[paste(health_vars[i],"_4",sep="")]] * 100
+  
+  aggregated_site[[paste(strsplit(health_vars[i],"_")[[1]][1],"_relchg_2",sep="")]] <- (aggregated_site[[paste(health_vars[i],"_6",sep="")]] - aggregated_site[[paste(health_vars[i],"_5",sep="")]]) / 
+    aggregated_site[[paste(health_vars[i],"_5",sep="")]] * 100
+  
+  
+  aggregated_site[[paste(strsplit(health_vars[i],"_")[[1]][1],"_relchg_3",sep="")]] <- (aggregated_site[[paste(health_vars[i],"_8",sep="")]] - aggregated_site[[paste(health_vars[i],"_6",sep="")]]) / 
+    aggregated_site[[paste(health_vars[i],"_6",sep="")]] * 100
+  
+  
+  aggregated_site[[paste(strsplit(health_vars[i],"_")[[1]][1],"_relchg_total",sep="")]] <- (aggregated_site[[paste(health_vars[i],"_8",sep="")]] - aggregated_site[[paste(health_vars[i],"_4",sep="")]]) / 
+    aggregated_site[[paste(health_vars[i],"_4",sep="")]] * 100
+  
+}
+
+#merge relative changes into site level dataset
+site_wide <- merge(site_wide,aggregated_site,by="site_code")
+site_wide <- do.call(data.frame,lapply(site_wide, function(x) replace(x, is.infinite(x),NA)))
+
+
+#Look at pairwise correlations between neonic conc. and relative health changes over time
+
+#interval 1
+res <- cor.mtest(site_wide[,grepl("_relchg_1|may|planting",colnames(site_wide))],na.action=na.omit)
+corrplot(cor(site_wide[,grepl("_relchg_1|may|planting",colnames(site_wide))],use="complete.obs"),
+         type="upper",tl.col="black",tl.srt=90,p.mat=res$p,
+         insig="label_sig",pch="*",pch.cex=1,pch.col="white")
+
+#interval 2
+res <- cor.mtest(site_wide[,grepl("_relchg_2|may|planting",colnames(site_wide))],na.action=na.omit)
+corrplot(cor(site_wide[,grepl("_relchg_2|may|planting",colnames(site_wide))],use="complete.obs")
+         ,type="upper",tl.col="black",tl.srt=90,p.mat=res$p,
+         insig="label_sig",pch="*",pch.cex=1,pch.col="white")
+
+#interval 3
+res <- cor.mtest(site_wide[,grepl("_relchg_3|may|planting",colnames(site_wide))],na.action=na.omit)
+corrplot(cor(site_wide[,grepl("_relchg_3|may|planting",colnames(site_wide))],use="complete.obs"),
+         type="upper",tl.col="black",tl.srt=90,p.mat=res$p,
+         insig="label_sig",pch="*",pch.cex=1,pch.col="white")
+
+#entire study interval
+res <- cor.mtest(site_wide[,grepl("_relchg_total|may|planting",colnames(site_wide))],na.action=na.omit)
+corrplot(cor(site_wide[,grepl("_relchg_total|may|planting",colnames(site_wide))],use="complete.obs"),type="upper",
+         tl.col="black",tl.srt=90,p.mat=res$p,insig="label_sig",pch="*",pch.cex=1,pch.col="white")
+
+```
+
+```{r eval=T, echo=T}
+
+##interval 1 (Apr - May)
+
+fm_seams_r1 <- lm(seams_relchg_1 ~ mean_ct_may , data=site_wide)
+summary(fm_seams_r1) #significant reduction
+
+
+fm_bees_r1 <- lm(bees_relchg_1 ~ mean_ct_may + pollen_relchg_1, data=site_wide)
+summary(fm_bees_r1) #significant reduction
+
+
+fm_pollen_r1 <- lm(pollen_relchg_1 ~ mean_ct_may, data=site_wide)
+summary(fm_pollen_r1) # no effect on rel. pollen change 
+
+
+fm_nectar_r1 <- lm(nectar_relchg_1 ~ mean_ct_may , data=site_wide)
+summary(fm_nectar_r1) # no effect on nectar
+
+
+#interval 2 (May - June)
+
+
+fm_seams_r2 <- lm(seams_relchg_2 ~ mean_ct_may , data=site_wide)
+summary(fm_seams_r2) #significant increase 
+
+
+fm_bees_r2 <- lm(bees_relchg_2 ~ mean_ct_may , data=site_wide)
+summary(fm_bees_r2) # no effect
+
+
+#interval 3 (June - Aug)
+
+fm_seams_r3 <- lm(seams_relchg_3 ~ mean_ct_may , data=site_wide)
+summary(fm_seams_r3) # no effect
+
+
+fm_bees_r3 <- lm(bees_relchg_3 ~ mean_ct_may , data=site_wide)
+summary(fm_bees_r3) # no effect
+
+
+fm_open_r3 <- lm(open_relchg_3 ~ mean_ct_may, data=site_wide) 
+summary(fm_open_r3) # significant decrease - driven by one outlier only
+
+
+fm_capped_r3 <- lm(capped_relchg_3 ~ mean_ct_may , data=site_wide)
+summary(fm_capped_r3) # no effect 
+
+
+fm_pollen_r3 <- lm(pollen_relchg_3 ~ mean_ct_may , data=site_wide)
+summary(fm_pollen_r3) # sig + effect
+
+
+fm_nectar_r3 <- lm(nectar_relchg_3 ~ mean_ct_may , data=site_wide)
+summary(fm_nectar_r3) # no effect
+
+
+
+#entire study interval (Apr - Aug)
+fm_seams_rt <- lm(seams_relchg_total ~ mean_ct_may, data=site_wide)
+summary(fm_seams_rt) # no effect
+
+
+fm_bees_rt <- lm(bees_relchg_total ~ mean_ct_may, data=site_wide)
+summary(fm_bees_rt) # no effect
+
+
+fm_open_rt <- lm(open_relchg_total ~ mean_ct_may , data=site_wide) 
+summary(fm_open_rt) # no effect
+
+
+fm_capped_rt <- lm(capped_relchg_total ~ mean_ct_may, data=site_wide)
+summary(fm_capped_rt) # no effect 
+
+
+fm_pollen_rt <- lm(pollen_relchg_total ~ mean_ct_may , data=site_wide)
+summary(fm_pollen_rt) # no effect
+
+
+fm_nectar_rt <- lm(nectar_relchg_total ~ mean_ct_may , data=site_wide)
+summary(fm_nectar_rt) # no effect
+
+
+```

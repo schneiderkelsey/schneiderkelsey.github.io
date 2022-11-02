@@ -1,0 +1,18 @@
+The file rare_data_osu_2015.csv contains the final data analyses from the Regioanl Applied Research Effort between EPA region 5 and Ohio State University.
+
+osu_run: the run number that OSU gave to the EPA in chronological order for that media                
+sample_id: EPA sample identification.  IH is in-hive, NB is nuc box, DBT is dead bee traps,  H is honey, L is larvae, nb is nurse bees, BB is bee bread and FP is field pollen,P is pollen and RJ is royal jelly.  The corresponding number is the value that matches up with the sample ID number given by OSU in the osu_run field.      
+date: Collection date for that sample written as MM/DD/YYYY       
+site_abbrv: The site where the sample was collected (sample names are abbreviated).          
+site: The site where the sample was collected.         
+initial_weight: Initial weight in grams of the sample that was sent from OSU to the EPA     
+final_weight: Final weight in grams of the sample that was used for extraction by the EPA.       
+units: Concentration units in ng/g for each sample that was analyzed by the EPA      
+media: The matrix or media of that sample.  There is in_hive_honey, in_hive_bee_bread, in_hive_bees, nuc_box_nurse_bees, dead_bee_traps, in_hive_larvae, nuc_box_larvae, field_pollen, nuc_box_pollen and royal_jelly (in-hive).   
+dinotefuran: Concentration in ng/g of this analyte in the corresponding sample        
+nitenpyram: Concentration in ng/g of this analyte in the corresponding sample               
+thiamethoxam: Concentration in ng/g of this analyte in the corresponding sample         
+clothianidin: Concentration in ng/g of this analyte in the corresponding sample                
+imidacloprid: Concentration in ng/g of this analyte in the corresponding sample              
+acetamiprid: Concentration in ng/g of this analyte in the corresponding sample               
+thiacloprid: Concentration in ng/g of this analyte in the corresponding sample       

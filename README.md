@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 The Rain Garden/Wildflower webpage is a fun webpage to visit when you're on the go and at the plant shop without an idea of where to start on your own garden. Ideas come and go so why not try to create a webpage out of one. I have a garden that wont grow anything other than native plants. I also have a garden that tends to get a lot of rain when it's downpouring in Kentucky, so I've created a place where I can look up many native/water friendly plants. I had no clue there were so many Grasses/Sedges/Bushes, Small Trees and Shrubs, Ferns, and Wildflowers to choose from and for this project I've stuck to wildflowers because I love wildflowers. I also love art which is why I've included some of my favorite garden inspired photos to my webpage. I hope that when you visit this page you're inspired to start your own Wildflower Rain Garden. To quote Tom Petty, "You belong amoung the wildflowers". 
 I started my webpage by completing mobile first, then desktop, then wide screen. I then added a Flexbox/CSS Grid combination. I included media queries to pull my webpage together. 
 CSS Features List 
@@ -23,4 +24,7 @@ data_1_checks
 knowledge checks for Code Louisville data analytics 1
 
 rare_pollen
+=======
+# rare_pollen
+>>>>>>> 0ba96a1660135b33506f674e91f60fe3eb5d5468
 osu pollen analysis comparison
