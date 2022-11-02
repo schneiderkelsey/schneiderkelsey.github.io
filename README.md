@@ -21,3 +21,6 @@ Scud script downloaded.
 
 data_1_checks
 knowledge checks for Code Louisville data analytics 1
+
+rare_pollen
+osu pollen analysis comparison
