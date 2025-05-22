@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>About Me</title>
+</head>
+<body>
+    <h1>Welcome to my webpage!</h1>
+    <p>I wrote this in HTML.</p>
+    <a>https://code-you.org/</a>
+    <p>I'm a student at Code:You</p>
+    <ul>
+        <li>My name is Kelsey</li>
+        <li>I am 36 years old</li>
+        <li>I live in Louisville, KY</li></ul>
+        <img>https://code-you.org/wp-content/uploads/2023/07/codeyou-logo-wink.gif</img>
+</body>
+</html>
